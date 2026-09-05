@@ -1,19 +1,36 @@
 package com.example.runner
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.example.runner.ble.DeviceInfo
+import com.example.runner.ble.HeartRateMonitor
+import com.example.runner.ble.toDeviceInfo
+import com.example.runner.ui.ConnectionState
+import com.example.runner.ui.DeviceScanScreen
+import com.example.runner.ui.HeartRateScreen
 import com.example.runner.ui.theme.RunnerTheme
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,10 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             RunnerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    RunnerApp(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -33,19 +47,100 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Surface(color = Color.Cyan) {
-        Text(
-            text = "Hello $name!",
-            modifier = modifier
+private fun RunnerApp(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val monitor = remember { HeartRateMonitor(context) }
+
+    // Runtime BLE permissions.
+    val requiredPermissions = remember {
+        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+    }
+    var permissionsGranted by remember { mutableStateOf(context.hasPermissions(requiredPermissions)) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        permissionsGranted = result.values.all { it }
+    }
+
+    // Scan state.
+    var devices by remember { mutableStateOf<List<DeviceInfo>>(emptyList()) }
+    var isScanning by remember { mutableStateOf(false) }
+    var scanError by remember { mutableStateOf<String?>(null) }
+    val scanScope = rememberCoroutineScope()
+
+    // Connection state.
+    var selectedDevice by remember { mutableStateOf<DeviceInfo?>(null) }
+    var heartRate by remember { mutableStateOf<Int?>(null) }
+    var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Connecting) }
+
+    fun scanDevices() {
+        scanScope.launch {
+            isScanning = true
+            scanError = null
+            devices = emptyList()
+            try {
+                monitor.scan().collect { result ->
+                    val info = result.toDeviceInfo() ?: return@collect
+                    if (devices.none { it.address == info.address }) {
+                        devices = devices + info
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                scanError = e.message ?: "Scan failed"
+            } finally {
+                isScanning = false
+            }
+        }
+    }
+
+    LaunchedEffect(permissionsGranted) {
+        if (permissionsGranted && selectedDevice == null) {
+            scanDevices()
+        }
+    }
+
+    val device = selectedDevice
+    if (device == null) {
+        DeviceScanScreen(
+            devices = devices,
+            isScanning = isScanning,
+            error = scanError,
+            permissionsGranted = permissionsGranted,
+            onRequestPermissions = { permissionLauncher.launch(requiredPermissions) },
+            onScan = ::scanDevices,
+            onDeviceSelected = { selectedDevice = it },
+        )
+    } else {
+        LaunchedEffect(device) {
+            heartRate = null
+            connectionState = ConnectionState.Connecting
+            try {
+                monitor.connect(device.device) { rate ->
+                    heartRate = rate
+                    connectionState = ConnectionState.Connected
+                }
+                // Connection closed without an exception (e.g. remote device stopped).
+                connectionState = ConnectionState.Disconnected
+            } catch (e: CancellationException) {
+                // Canceled by leaving this screen or by the remote device disconnecting.
+                connectionState = ConnectionState.Disconnected
+                throw e
+            } catch (e: Exception) {
+                connectionState = ConnectionState.Failed(e.message ?: "Connection failed")
+            }
+        }
+        HeartRateScreen(
+            device = device,
+            connectionState = connectionState,
+            heartRate = heartRate,
+            onDisconnect = { selectedDevice = null },
         )
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RunnerTheme {
-        Greeting("Android")
+private fun Context.hasPermissions(permissions: Array<String>): Boolean =
+    permissions.all {
+        ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
-}

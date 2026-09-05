@@ -1,0 +1,10 @@
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Application description:
+I want an android application that will communicate via BLE with the user heart rate monitor.
+- The user should be able to select the heart rate monitor between the available BLE devices.
+- The app will connect to the chosen heart rate monitor.
+- The app will show the actual heart rate, with an update rate of 1 second.
