@@ -31,6 +31,7 @@ import com.example.runner.gps.GpsTracker
 import com.example.runner.ui.ConnectionState
 import com.example.runner.ui.DeviceScanScreen
 import com.example.runner.ui.HeartRateScreen
+import com.example.runner.ui.RecordingState
 import com.example.runner.ui.theme.RunnerTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -81,6 +82,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     var selectedDevice by remember { mutableStateOf<DeviceInfo?>(null) }
     var heartRate by remember { mutableStateOf<Int?>(null) }
     var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Connecting) }
+    var recordingState by remember { mutableStateOf(RecordingState.WAITING_TO_START) }
 
     fun scanDevices() {
         scanScope.launch {
@@ -154,7 +156,15 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
             connectionState = connectionState,
             heartRate = heartRate,
             gpsState = gpsState,
-            onDisconnect = { selectedDevice = null },
+            onDisconnect = {
+                selectedDevice = null
+                recordingState = RecordingState.WAITING_TO_START
+            },
+            recordingState = recordingState,
+            onStartRecording = { recordingState = RecordingState.RECORDING },
+            onPauseRecording = { recordingState = RecordingState.PAUSE },
+            onResumeRecording = { recordingState = RecordingState.RECORDING },
+            onStopRecording = { recordingState = RecordingState.WAITING_TO_START },
         )
     }
 }

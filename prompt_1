@@ -1,3 +1,32 @@
+I want to add a new feature. It should be possible to record a new running session.
+- The app will act as a state machine with 3 states: WAITING_TO_START, RECORDING, PAUSE.
+- When the app is in WAITING_TO_START state:
+  - The button will display "START".
+  - If the button is pressed the state will transition to RECORDING.
+- When the app is in RECORDING state:
+  - The button will display "PAUSE".
+  - If the button is pressed the state will transition to PAUSE.
+- When the app is in PAUSE state:
+  - The button will be splitted in two buttons. One displays "RESUME" the other on displays "STOP".
+    - If the "RESUME" button is pressed the state will transition to RECORDING.
+    - If the "STOP" button is pressed the state will transition to WAITING_TO_START.
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+
+-----------------------------
+  - The app starts recording the heart rate readings and GPS location data very 1 second.
+  - Every 30 seconds the recorded data is saved in disk or database
+
+-----------------------------
+
+
 I want to add a new feature to our runner app. The app will use the mobile phone GPS.
 - The app will get the GPS data periodically, with an update rate of 1 second.
 - The app will show the actual signal strenght og the GPS signal. It will be shown as 3 values: No signal, weak signal, good signal.
@@ -10,6 +39,8 @@ Rules:
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 
+
+-----------------------------
 
 
 Build the application described in requirements file following the rules

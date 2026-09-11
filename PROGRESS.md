@@ -71,3 +71,30 @@ Plan and progress file (can be resumed if interrupted).
 - 2026-09-11: Architect plan obtained. Implementation completed, build + unit tests pass.
   Remaining: manual smoke test on a physical device with GPS.
   The manual test has passed.
+
+---
+
+## Recording State Machine Plan (architect, 2026-09-11)
+
+- State machine with 3 states: `WAITING_TO_START`, `RECORDING`, `PAUSE` (enum `ui/RecordingState.kt`,
+  same pattern as `ui/ConnectionState.kt`).
+- WAITING_TO_START: "START" button → RECORDING.
+- RECORDING: "PAUSE" button → PAUSE.
+- PAUSE: two buttons "RESUME" → RECORDING, "STOP" → WAITING_TO_START.
+- State in composables (`RunnerApp`), callbacks matched to existing style (`onStartRecording`, etc.).
+  No ViewModel.
+- UI: `RecordingControls` composable inside `HeartRateScreen` (between Disconnect button and GPS panel).
+
+## Recording Tasks
+
+- [x] Create `ui/RecordingState.kt` (enum: WAITING_TO_START, RECORDING, PAUSE)
+- [x] Add `RecordingControls` composable to `ui/Screens.kt`
+- [x] Update `HeartRateScreen` to accept + render recording state/controls
+- [x] Wire `recordingState` in `MainActivity.kt` (state + callbacks)
+- [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest`
+- [ ] Manual smoke test on device
+
+## Progress Notes (Recording)
+
+- 2026-09-11: Architect plan obtained. Implementation completed.
+  Build + unit tests pass. Remaining: manual smoke test on device.

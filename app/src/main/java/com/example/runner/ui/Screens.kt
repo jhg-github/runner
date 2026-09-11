@@ -129,6 +129,11 @@ fun HeartRateScreen(
     heartRate: Int?,
     gpsState: GpsState,
     onDisconnect: () -> Unit,
+    recordingState: RecordingState,
+    onStartRecording: () -> Unit,
+    onPauseRecording: () -> Unit,
+    onResumeRecording: () -> Unit,
+    onStopRecording: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -167,11 +172,21 @@ fun HeartRateScreen(
             )
         }
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(24.dp))
 
         Button(onClick = onDisconnect) {
             Text("Disconnect")
         }
+
+        Spacer(Modifier.height(24.dp))
+
+        RecordingControls(
+            recordingState = recordingState,
+            onStart = onStartRecording,
+            onPause = onPauseRecording,
+            onResume = onResumeRecording,
+            onStop = onStopRecording,
+        )
 
         Spacer(Modifier.height(24.dp))
 
@@ -233,4 +248,41 @@ private fun HeartRateDisplay(heartRate: Int?) {
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/**
+ * Shows the session recording controls, driven by the recording state machine.
+ */
+@Composable
+private fun RecordingControls(
+    recordingState: RecordingState,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onStop: () -> Unit,
+) {
+    when (recordingState) {
+        RecordingState.WAITING_TO_START -> {
+            Button(onClick = onStart) {
+                Text("START")
+            }
+        }
+
+        RecordingState.RECORDING -> {
+            Button(onClick = onPause) {
+                Text("PAUSE")
+            }
+        }
+
+        RecordingState.PAUSE -> {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onResume) {
+                    Text("RESUME")
+                }
+                Button(onClick = onStop) {
+                    Text("STOP")
+                }
+            }
+        }
+    }
 }
