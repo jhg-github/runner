@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,8 @@ import androidx.core.content.ContextCompat
 import com.example.runner.ble.DeviceInfo
 import com.example.runner.ble.HeartRateMonitor
 import com.example.runner.ble.toDeviceInfo
+import com.example.runner.gps.GpsState
+import com.example.runner.gps.GpsTracker
 import com.example.runner.ui.ConnectionState
 import com.example.runner.ui.DeviceScanScreen
 import com.example.runner.ui.HeartRateScreen
@@ -50,10 +53,16 @@ class MainActivity : ComponentActivity() {
 private fun RunnerApp(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val monitor = remember { HeartRateMonitor(context) }
+    val gpsTracker = remember { GpsTracker(context) }
+    var gpsState by remember { mutableStateOf(GpsState()) }
 
     // Runtime BLE permissions.
     val requiredPermissions = remember {
-        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        )
     }
     var permissionsGranted by remember { mutableStateOf(context.hasPermissions(requiredPermissions)) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -101,6 +110,15 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
         }
     }
 
+    // Start GPS updates when permissions change; stop when the activity leaves composition.
+    LaunchedEffect(permissionsGranted) {
+        gpsTracker.onUpdate = { gpsState = it }
+        if (permissionsGranted) gpsTracker.start()
+    }
+    DisposableEffect(Unit) {
+        onDispose { gpsTracker.stop() }
+    }
+
     val device = selectedDevice
     if (device == null) {
         DeviceScanScreen(
@@ -135,6 +153,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
             device = device,
             connectionState = connectionState,
             heartRate = heartRate,
+            gpsState = gpsState,
             onDisconnect = { selectedDevice = null },
         )
     }

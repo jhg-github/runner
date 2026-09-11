@@ -39,3 +39,35 @@ Plan and progress file (can be resumed if interrupted).
   `./gradlew :app:testDebugUnitTest` passes. APK at `app/build/outputs/apk/debug/app-debug.apk`.
 - Remaining: manual smoke test on a physical device (scan, connect, live heart rate display).
   The manual test has passed.
+
+---
+
+## GPS Feature Plan (architect, 2026-09-11)
+
+- GPS via plain `LocationManager` + `GPS_PROVIDER` (`minTimeMs=1000`, `minDistance=0m`).
+  No Google Play Services, no new dependencies, no foreground service (app is foreground-only).
+- Permission: `ACCESS_FINE_LOCATION` only, requested at runtime with the existing BLE
+  permission request (minSdk 31).
+- Signal strength from `Location.accuracy`: `<=10m` = GOOD, `<=50m` = WEAK, `>50m` = NONE;
+  no fix yet = No signal.
+- `gps/GpsLocation.kt`: `SignalStrength` enum, `GpsState` data class, `GpsTracker` wrapper
+  (callback style, mirrors `ble/HeartRateMonitor.kt`).
+- UI: `GpsPanel` composable at the bottom of `HeartRateScreen` (no new screen). Shows signal
+  dot + label, lat/lon, accuracy.
+- State in composables like the rest of the app; tracker started/stopped via
+  `LaunchedEffect`/`DisposableEffect`.
+
+## GPS Tasks
+
+- [x] Add `ACCESS_FINE_LOCATION` to `AndroidManifest.xml`
+- [x] Create `gps/GpsLocation.kt` (SignalStrength, GpsState, GpsTracker)
+- [x] Add `GpsPanel` to `ui/Screens.kt`; add `gpsState` param to `HeartRateScreen`
+- [x] Wire GPS in `MainActivity.kt` (permission, tracker, state)
+- [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL
+- [ ] Manual smoke test on device (GPS signal + coordinates on-screen)
+
+## Progress Notes (GPS)
+
+- 2026-09-11: Architect plan obtained. Implementation completed, build + unit tests pass.
+  Remaining: manual smoke test on a physical device with GPS.
+  The manual test has passed.

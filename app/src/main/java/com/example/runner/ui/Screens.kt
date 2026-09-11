@@ -1,5 +1,6 @@
 package com.example.runner.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.runner.ble.DeviceInfo
+import com.example.runner.gps.GpsState
+import com.example.runner.gps.SignalStrength
 
 /**
  * Lets the user scan for nearby BLE devices and pick a heart rate monitor.
@@ -123,6 +127,7 @@ fun HeartRateScreen(
     device: DeviceInfo,
     connectionState: ConnectionState,
     heartRate: Int?,
+    gpsState: GpsState,
     onDisconnect: () -> Unit,
 ) {
     Column(
@@ -166,6 +171,51 @@ fun HeartRateScreen(
 
         Button(onClick = onDisconnect) {
             Text("Disconnect")
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        GpsPanel(gpsState = gpsState)
+    }
+}
+
+/**
+ * Shows the current GPS signal strength and coordinates.
+ */
+@Composable
+fun GpsPanel(gpsState: GpsState, modifier: Modifier = Modifier) {
+    val (signalColor, signalText) = when (gpsState.signal) {
+        SignalStrength.GOOD -> MaterialTheme.colorScheme.primary to "Good signal"
+        SignalStrength.WEAK -> MaterialTheme.colorScheme.tertiary to "Weak signal"
+        SignalStrength.NONE -> MaterialTheme.colorScheme.error to "No signal"
+    }
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(text = "GPS", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(signalColor, CircleShape),
+                )
+                Spacer(Modifier.size(8.dp))
+                Text(text = signalText, style = MaterialTheme.typography.bodyLarge)
+            }
+            val lat = gpsState.latitude?.let { "%.6f".format(it) } ?: "—"
+            val lon = gpsState.longitude?.let { "%.6f".format(it) } ?: "—"
+            Text(text = "Lat: $lat   Lon: $lon", style = MaterialTheme.typography.bodyMedium)
+            gpsState.accuracy?.let {
+                Text(
+                    text = "Accuracy: ${"%.1f".format(it)} m",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
