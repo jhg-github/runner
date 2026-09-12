@@ -98,3 +98,74 @@ Plan and progress file (can be resumed if interrupted).
 
 - 2026-09-11: Architect plan obtained. Implementation completed.
   Build + unit tests pass. Remaining: manual smoke test on device.
+
+---
+
+## Session Recording Feature Plan (architect, 2026-09-11)
+
+- `recording/TrackPoint.kt`: data class (lat, lon, elevation, timestamp, heartRate).
+- `recording/SessionRecorder.kt`: plain Kotlin class holding points in RAM.
+  - `startNewSession()` clears points + records session start.
+  - `addPoint()` appends samples.
+  - `flushToBackup(cacheDir)` writes full GPX to cache `session_backup.gpx` (every 30 s, crash-safe).
+  - `saveToDownloads(context)` writes final GPX to Downloads via `MediaStore.Downloads`
+    (no permission needed at minSdk 31), unique date-based name `Run_YYYY-MM-DD_HH-mm-ss.gpx`,
+    clears points.
+  - `generateGpxXml()` string-builds GPX 1.1 matching `docs/Night_Run.gpx` (trkpt + ele +
+    time + gpxtpx hr extension).
+- `gps/GpsLocation.kt`: `GpsState` gains `elevation` from `Location.altitude`.
+- `MainActivity.kt`: `LaunchedEffect(recordingState)` loop — `delay(1000)` → sample
+  latest GPS + HR → `addPoint`; every 30th sample → `flushToBackup`. Backups also on
+  START and STOP; downloads save on STOP; backup deleted on disconnect/STOP.
+
+## Session Recording Tasks
+
+- [x] Create `recording/TrackPoint.kt`
+- [x] Create `recording/SessionRecorder.kt` (backup + GPX export)
+- [x] Add elevation to `gps/GpsLocation.kt`
+- [x] Wire recorder + sampling/backup loop in `MainActivity.kt`
+- [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest`
+- [ ] Manual smoke test on device (start, record, pause, resume, stop → file in Downloads)
+
+## Progress Notes (Session Recording)
+
+- 2026-09-11: Architect plan obtained. Implementation completed.
+  Build + unit tests pass. Remaining: manual smoke test on device.
+  Manual test passed but revealed GPS bug: coordinates freeze after ~5-6 records.
+
+---
+
+## GPS Stale Fix Bug Fix Plan (architect, 2026-09-12)
+
+**Bug:** GPS data updates only in the first ~5-6 records; the rest keep the same value.
+Root cause: `GpsTracker` uses bare `GPS_PROVIDER` with no foreground service.
+Android throttles GPS after initial burst. No re-registration, no staleness check.
+
+**Fix:** Foreground service (type `location`) + staleness guard + re-register on provider events.
+
+### Changes
+
+1. `AndroidManifest.xml` — add `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION` permissions
+   and `<service>` declaration for `RecordingService`.
+2. `recording/RecordingService.kt` — NEW minimal `Service`: notification + `startForeground(LOCATION)`.
+   No binder, no logic — keep-alive only.
+3. `res/values/strings.xml` — add notification strings.
+4. `gps/GpsLocation.kt` — add `fixElapsedMs` to `GpsState`; extract `register()` method;
+   override `onProviderEnabled` to re-register.
+5. `MainActivity.kt` — `DisposableEffect(recordingState)` to start/stop foreground service;
+   staleness guard in sampling loop (skip points with fix > 5s old).
+
+### Tasks
+
+- [x] Modify `AndroidManifest.xml`
+- [x] Create `recording/RecordingService.kt`
+- [x] Add strings to `res/values/strings.xml`
+- [x] Modify `gps/GpsLocation.kt`
+- [x] Modify `MainActivity.kt`
+- [x] Build and verify
+
+## Progress Notes (GPS Fix)
+
+- 2026-09-12: Architect plan obtained. Implementation completed.
+  `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL.
+  Manual test on device passed (GPS coords keep changing; no more frozen tail).

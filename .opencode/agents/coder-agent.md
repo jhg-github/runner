@@ -22,3 +22,4 @@ Rules:
 - Minimal error handling, only critical errors.
 - Match the project's style and structure.
 - Keep responses concise: minimal explanation, focus on code.
+- Sugest me a manual test.

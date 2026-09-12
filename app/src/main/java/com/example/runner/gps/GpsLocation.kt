@@ -16,8 +16,11 @@ enum class SignalStrength { NONE, WEAK, GOOD }
 data class GpsState(
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val elevation: Double? = null,
     val accuracy: Float? = null,
     val signal: SignalStrength = SignalStrength.NONE,
+    /** Monotonic timestamp of the fix (ms since boot), 0 = no fix yet. */
+    val fixElapsedMs: Long = 0L,
 )
 
 /**
@@ -30,6 +33,11 @@ class GpsTracker(context: Context) {
         appContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) = update(location)
+
+        override fun onProviderEnabled(provider: String) {
+            // Provider came back (or was toggled); re-arm the update request.
+            register()
+        }
     }
 
     var onUpdate: ((GpsState) -> Unit)? = null
@@ -40,6 +48,10 @@ class GpsTracker(context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
         if (!granted) return
         locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { update(it) }
+        register()
+    }
+
+    private fun register() {
         locationManager.requestLocationUpdates(
             LocationManager.GPS_PROVIDER, 1000L, 0f, listener, Looper.getMainLooper()
         )
@@ -56,7 +68,14 @@ class GpsTracker(context: Context) {
             else -> SignalStrength.NONE
         }
         onUpdate?.invoke(
-            GpsState(location.latitude, location.longitude, location.accuracy, signal)
+            GpsState(
+                latitude = location.latitude,
+                longitude = location.longitude,
+                elevation = location.altitude.toDouble(),
+                accuracy = location.accuracy,
+                signal = signal,
+                fixElapsedMs = location.elapsedRealtimeNanos / 1_000_000L,
+            )
         )
     }
 }

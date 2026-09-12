@@ -1,3 +1,48 @@
+The manual test has failed.
+- The GPS data has been updated only in the first 5 records, the rest keep the same value, but the runner was moving.
+- I have uploaded the test file, look at it and analyze the possible cause.
+- The test file: docs/Run_2026-09-12_16-54-43.gpx
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+-----------------------------
+
+
+I want to add a new feature. It should be possible to record a new running session.
+- The app will act as a state machine with 3 states: WAITING_TO_START, RECORDING, PAUSE.
+- When the app is in WAITING_TO_START state:
+  - The needed recording variables are initialized.
+- When the app is in RECORDING state:
+  - The app records the heart rate readings and GPS location data very 1 second. This records reside on RAM.
+  - The app writes on a permament resource, like a database or file system, the records. This happens every 30 seconds. This is done in order to not loose data in case of breakdown of the app and to limit the RAM usage.
+- When the app is in PAUSE state:
+  - The recording is paused temporary.
+  - If the "RESUME" button is pressed:
+    - The recording resumes.
+  - If the "STOP" button is pressed:
+    - All recorded data for that sesion is saved in a file.
+    - The file has extension .gpx.
+    - The file name needs to be unique. You can use the date for this.
+    - The format for the content is the gpx format. An example of this format can be found on docs/Night_Run.gpx
+    - The file has to be saved in a location easy available for the user to retrieve via USB.
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+-----------------------------
+
+
 I want to add a new feature. It should be possible to record a new running session.
 - The app will act as a state machine with 3 states: WAITING_TO_START, RECORDING, PAUSE.
 - When the app is in WAITING_TO_START state:
@@ -19,8 +64,8 @@ Rules:
 Be extremely concise. Sacrifice grammar for the sake of concision.
 
 
-
 -----------------------------
+
   - The app starts recording the heart rate readings and GPS location data very 1 second.
   - Every 30 seconds the recorded data is saved in disk or database
 
