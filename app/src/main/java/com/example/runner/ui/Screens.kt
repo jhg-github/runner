@@ -29,6 +29,9 @@ import com.example.runner.ble.DeviceInfo
 import com.example.runner.gps.GpsState
 import com.example.runner.gps.SignalStrength
 
+/** Top-level navigation between the two app screens. */
+enum class AppScreen { CONFIG, SESSION }
+
 /**
  * Lets the user scan for nearby BLE devices and pick a heart rate monitor.
  */
@@ -120,21 +123,39 @@ private fun DeviceCard(device: DeviceInfo, onClick: () -> Unit) {
 }
 
 /**
- * Shows the live heart rate of the connected monitor, or the connection status.
+ * First screen: heart rate monitor connection, GPS status, and a button to start a session.
+ * Shows the device scan when no monitor is connected yet.
  */
 @Composable
-fun HeartRateScreen(
-    device: DeviceInfo,
+fun ConfigScreen(
+    devices: List<DeviceInfo>,
+    isScanning: Boolean,
+    scanError: String?,
+    permissionsGranted: Boolean,
+    onRequestPermissions: () -> Unit,
+    onScan: () -> Unit,
+    onDeviceSelected: (DeviceInfo) -> Unit,
+    device: DeviceInfo?,
     connectionState: ConnectionState,
     heartRate: Int?,
     gpsState: GpsState,
     onDisconnect: () -> Unit,
-    recordingState: RecordingState,
-    onStartRecording: () -> Unit,
-    onPauseRecording: () -> Unit,
-    onResumeRecording: () -> Unit,
-    onStopRecording: () -> Unit,
+    onNewSession: () -> Unit,
 ) {
+    val selectedDevice = device
+    if (selectedDevice == null) {
+        DeviceScanScreen(
+            devices = devices,
+            isScanning = isScanning,
+            error = scanError,
+            permissionsGranted = permissionsGranted,
+            onRequestPermissions = onRequestPermissions,
+            onScan = onScan,
+            onDeviceSelected = onDeviceSelected,
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,7 +164,7 @@ fun HeartRateScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = device.name,
+            text = selectedDevice.name,
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
@@ -180,6 +201,43 @@ fun HeartRateScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        GpsPanel(gpsState = gpsState)
+
+        Spacer(Modifier.height(24.dp))
+
+        Button(onClick = onNewSession, enabled = connectionState == ConnectionState.Connected) {
+            Text("New Session")
+        }
+    }
+}
+
+/**
+ * Second screen: live heart rate value and session recording controls only.
+ */
+@Composable
+fun SessionScreen(
+    heartRate: Int?,
+    recordingState: RecordingState,
+    onStartRecording: () -> Unit,
+    onPauseRecording: () -> Unit,
+    onResumeRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = heartRate?.toString() ?: "--",
+            style = MaterialTheme.typography.displayLarge,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(Modifier.height(24.dp))
+
         RecordingControls(
             recordingState = recordingState,
             onStart = onStartRecording,
@@ -187,10 +245,6 @@ fun HeartRateScreen(
             onResume = onResumeRecording,
             onStop = onStopRecording,
         )
-
-        Spacer(Modifier.height(24.dp))
-
-        GpsPanel(gpsState = gpsState)
     }
 }
 

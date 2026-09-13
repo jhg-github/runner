@@ -33,10 +33,11 @@ import com.example.runner.gps.GpsTracker
 import com.example.runner.recording.RecordingService
 import com.example.runner.recording.SessionRecorder
 import com.example.runner.recording.TrackPoint
+import com.example.runner.ui.AppScreen
+import com.example.runner.ui.ConfigScreen
 import com.example.runner.ui.ConnectionState
-import com.example.runner.ui.DeviceScanScreen
-import com.example.runner.ui.HeartRateScreen
 import com.example.runner.ui.RecordingState
+import com.example.runner.ui.SessionScreen
 import com.example.runner.ui.theme.RunnerTheme
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
@@ -95,6 +96,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     var heartRate by remember { mutableStateOf<Int?>(null) }
     var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Connecting) }
     var recordingState by remember { mutableStateOf(RecordingState.WAITING_TO_START) }
+    var currentScreen by remember { mutableStateOf(AppScreen.CONFIG) }
 
     fun scanDevices() {
         scanScope.launch {
@@ -179,36 +181,38 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     }
 
     val device = selectedDevice
-    if (device == null) {
-        DeviceScanScreen(
+
+    // Connect to the selected monitor. Stays active across both screens so the
+    // session screen keeps receiving heart rate data.
+    LaunchedEffect(device) {
+        if (device == null) return@LaunchedEffect
+        heartRate = null
+        connectionState = ConnectionState.Connecting
+        try {
+            monitor.connect(device.device) { rate ->
+                heartRate = rate
+                connectionState = ConnectionState.Connected
+            }
+            // Connection closed without an exception (e.g. remote device stopped).
+            connectionState = ConnectionState.Disconnected
+        } catch (e: CancellationException) {
+            // Canceled by leaving this screen or by the remote device disconnecting.
+            connectionState = ConnectionState.Disconnected
+            throw e
+        } catch (e: Exception) {
+            connectionState = ConnectionState.Failed(e.message ?: "Connection failed")
+        }
+    }
+
+    when (currentScreen) {
+        AppScreen.CONFIG -> ConfigScreen(
             devices = devices,
             isScanning = isScanning,
-            error = scanError,
+            scanError = scanError,
             permissionsGranted = permissionsGranted,
             onRequestPermissions = { permissionLauncher.launch(requiredPermissions) },
             onScan = ::scanDevices,
             onDeviceSelected = { selectedDevice = it },
-        )
-    } else {
-        LaunchedEffect(device) {
-            heartRate = null
-            connectionState = ConnectionState.Connecting
-            try {
-                monitor.connect(device.device) { rate ->
-                    heartRate = rate
-                    connectionState = ConnectionState.Connected
-                }
-                // Connection closed without an exception (e.g. remote device stopped).
-                connectionState = ConnectionState.Disconnected
-            } catch (e: CancellationException) {
-                // Canceled by leaving this screen or by the remote device disconnecting.
-                connectionState = ConnectionState.Disconnected
-                throw e
-            } catch (e: Exception) {
-                connectionState = ConnectionState.Failed(e.message ?: "Connection failed")
-            }
-        }
-        HeartRateScreen(
             device = device,
             connectionState = connectionState,
             heartRate = heartRate,
@@ -218,6 +222,11 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
                 recordingState = RecordingState.WAITING_TO_START
                 recorder.deleteBackup(context.cacheDir)
             },
+            onNewSession = { currentScreen = AppScreen.SESSION },
+        )
+
+        AppScreen.SESSION -> SessionScreen(
+            heartRate = heartRate,
             recordingState = recordingState,
             onStartRecording = {
                 recorder.startNewSession()
@@ -231,6 +240,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
                 recorder.saveToDownloads(context)
                 recorder.deleteBackup(context.cacheDir)
                 recordingState = RecordingState.WAITING_TO_START
+                currentScreen = AppScreen.CONFIG
             },
         )
     }

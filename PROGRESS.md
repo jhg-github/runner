@@ -169,3 +169,71 @@ Android throttles GPS after initial burst. No re-registration, no staleness chec
 - 2026-09-12: Architect plan obtained. Implementation completed.
   `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL.
   Manual test on device passed (GPS coords keep changing; no more frozen tail).
+
+---
+
+## Two-Screen Split Plan (architect, 2026-09-13)
+
+**Goal:** Split single-screen app into Config screen + Session screen. No logic changes.
+
+### Design
+
+- `enum class AppScreen { CONFIG, SESSION }` — simple navigation state in `RunnerApp`.
+- **ConfigScreen**: Device scan/select + HR connection status/display + GPS panel + "New Session" button.
+  - DeviceScanScreen shown when no device selected.
+  - When connected: shows HR display, GPS, Disconnect, and "New Session" (enabled only when connected).
+- **SessionScreen**: Device name + HR display + RecordingControls + GPS panel + "Disconnect" button.
+  - Same as current HeartRateScreen minus the START button (recording starts when entering session).
+  - STOP → stops recording + navigates back to CONFIG.
+  - Disconnect → navigates back to CONFIG.
+
+### Changes
+
+1. `ui/Screens.kt`: Add `ConfigScreen` and `SessionScreen` composables. Remove old `HeartRateScreen`.
+2. `MainActivity.kt`: Add `currentScreen` state. Config → "New Session" starts session + navigates to Session. Session → "Stop" stops + navigates to Config. Session → "Disconnect" navigates to Config.
+
+### Tasks
+
+- [x] Write plan
+- [x] Add `AppScreen` enum to `ui/Screens.kt`
+- [x] Create `ConfigScreen` composable
+- [x] Create `SessionScreen` composable
+- [x] Update `MainActivity.kt` navigation
+- [x] Build and verify
+
+## Progress Notes (Two-Screen Split)
+
+- 2026-09-13: Plan obtained. Implementation completed.
+  `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL.
+  Manual smoke test on device passed (config → new session → record → stop → back to config).
+
+---
+
+## Session Screen Simplification Plan (architect, 2026-09-13)
+
+**Goal:** Session screen shows ONLY heart rate value + session buttons. Remove everything else.
+
+### Design Decisions
+
+- RecordingControls already covers Start/Pause/Resume/Stop — no changes needed.
+- Remove unused params from SessionScreen (device, connectionState, gpsState, onDisconnect).
+- Do NOT edit HeartRateDisplay (shared with ConfigScreen) — render value-only HR inline.
+- Disconnect button removed from session; STOP returns to config.
+
+### Changes
+
+1. `ui/Screens.kt`: Rewrite `SessionScreen` — new params: `heartRate`, `recordingState`, 4 callbacks. Body: HR value text + Spacer + RecordingControls. Remove device name, connection-state block, Disconnect button, GpsPanel.
+2. `MainActivity.kt`: Simplify `SessionScreen(...)` call-site to pass only new params. Remove device/connectionState/gpsState/onDisconnect.
+
+### Tasks
+
+- [x] Rewrite SessionScreen in Screens.kt
+- [x] Update SessionScreen call-site in MainActivity.kt
+- [x] Build and verify
+
+## Progress Notes (Session Screen Simplification)
+
+- 2026-09-13: Plan obtained. Implementation completed.
+  `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL.
+  SessionScreen now shows only HR value + RecordingControls (Start/Pause/Resume/Stop).
+  Manual smoke test on device passed (session shows only HR value + buttons; START/PAUSE/RESUME/STOP work; STOP returns to config; config screen unchanged).

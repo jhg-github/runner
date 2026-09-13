@@ -1,3 +1,49 @@
+
+I want to modify the appereance of the session screen.
+The only elements in the session screen should be:
+- The heart rate. The value only, not the string "beats per minute".
+- The session buttons:
+  - Start button
+  - Pause/Resume button
+  - Stop button
+The rest of elements should be removed from session screen.
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+-----------------------------
+
+
+I want to add a new feature. The app will have two screens, so we have to split the already implementd logic. We don't change the logic only the visuals.
+- The first screen.
+  - This screen is the one visible when opening the app.
+  - This is the configuration screen.
+  - This screen contains:
+    - The heart rate monitor conection logic.
+    - The GPS status and logic.
+    - A "New Session" button to start a new session.
+  - When the "New Session" button is pressed the app will go to the second screen, the session screen.
+- The second screen.
+  - This screen is the session screen.
+  - This screen contains the session logic, records logic and buttons. The behaviuor doesn't change.
+  - When the "Stop" button is pressed, apart from all the Stop logic, the app will go to the configuration screen.
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+-----------------------------
+
+
 The manual test has failed.
 - The GPS data has been updated only in the first 5 records, the rest keep the same value, but the runner was moving.
 - I have uploaded the test file, look at it and analyze the possible cause.
