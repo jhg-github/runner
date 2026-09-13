@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.example.runner.ble.DeviceInfo
 import com.example.runner.gps.GpsState
 import com.example.runner.gps.SignalStrength
+import java.time.Duration
+import java.util.Locale
 
 /** Top-level navigation between the two app screens. */
 enum class AppScreen { CONFIG, SESSION }
@@ -212,12 +214,13 @@ fun ConfigScreen(
 }
 
 /**
- * Second screen: live heart rate value and session recording controls only.
+ * Second screen: live heart rate value, total elapsed session time and recording controls.
  */
 @Composable
 fun SessionScreen(
     heartRate: Int?,
     recordingState: RecordingState,
+    elapsedMs: Long,
     onStartRecording: () -> Unit,
     onPauseRecording: () -> Unit,
     onResumeRecording: () -> Unit,
@@ -238,6 +241,19 @@ fun SessionScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        Text(
+            text = formatElapsed(elapsedMs),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = "elapsed",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(Modifier.height(24.dp))
+
         RecordingControls(
             recordingState = recordingState,
             onStart = onStartRecording,
@@ -246,6 +262,12 @@ fun SessionScreen(
             onStop = onStopRecording,
         )
     }
+}
+
+/** Formats [ms] as HH:MM:SS. */
+private fun formatElapsed(ms: Long): String {
+    val d = Duration.ofMillis(ms)
+    return "%02d:%02d:%02d".format(Locale.US, d.toHours(), d.toMinutesPart(), d.toSecondsPart())
 }
 
 /**

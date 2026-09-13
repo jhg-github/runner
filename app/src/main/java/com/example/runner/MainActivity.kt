@@ -96,6 +96,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     var heartRate by remember { mutableStateOf<Int?>(null) }
     var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Connecting) }
     var recordingState by remember { mutableStateOf(RecordingState.WAITING_TO_START) }
+    var elapsedMs by remember { mutableStateOf(0L) }
     var currentScreen by remember { mutableStateOf(AppScreen.CONFIG) }
 
     fun scanDevices() {
@@ -142,6 +143,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
             while (isActive) {
                 delay(1000)
                 elapsed++
+                elapsedMs = recorder.elapsedMillis()
                 val fresh = gpsState.fixElapsedMs > 0 &&
                     SystemClock.elapsedRealtime() - gpsState.fixElapsedMs < STALE_FIX_MS
                 val lat = gpsState.latitude
@@ -228,13 +230,22 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
         AppScreen.SESSION -> SessionScreen(
             heartRate = heartRate,
             recordingState = recordingState,
+            elapsedMs = elapsedMs,
             onStartRecording = {
                 recorder.startNewSession()
                 recorder.flushToBackup(context.cacheDir)
+                elapsedMs = 0
                 recordingState = RecordingState.RECORDING
             },
-            onPauseRecording = { recordingState = RecordingState.PAUSE },
-            onResumeRecording = { recordingState = RecordingState.RECORDING },
+            onPauseRecording = {
+                recorder.onPause()
+                elapsedMs = recorder.elapsedMillis()
+                recordingState = RecordingState.PAUSE
+            },
+            onResumeRecording = {
+                recorder.onResume()
+                recordingState = RecordingState.RECORDING
+            },
             onStopRecording = {
                 recorder.flushToBackup(context.cacheDir)
                 recorder.saveToDownloads(context)

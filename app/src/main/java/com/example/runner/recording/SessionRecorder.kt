@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -19,10 +20,38 @@ class SessionRecorder {
 
     private var startTime: Instant = Instant.now()
 
+    /** Total paused time during the session, deducted from elapsed. */
+    private var accumulatedPausedMs: Long = 0
+
+    /** Non-null only while the session is paused. */
+    private var pauseStart: Instant? = null
+
     /** Clears any previous session data. Called when entering WAITING_TO_START. */
     fun startNewSession() {
         points.clear()
         startTime = Instant.now()
+        accumulatedPausedMs = 0
+        pauseStart = null
+    }
+
+    /** Marks the pause instant. Idempotent. */
+    fun onPause() {
+        if (pauseStart == null) pauseStart = Instant.now()
+    }
+
+    /** Folds the paused span into accumulatedPausedMs. Idempotent. */
+    fun onResume() {
+        pauseStart?.let { accumulatedPausedMs += Duration.between(it, Instant.now()).toMillis() }
+        pauseStart = null
+    }
+
+    /**
+     * Time since the session started, excluding paused spans. While paused the value is
+     * frozen at the pause instant.
+     */
+    fun elapsedMillis(): Long {
+        val base = pauseStart ?: Instant.now()
+        return maxOf(0L, Duration.between(startTime, base).toMillis() - accumulatedPausedMs)
     }
 
     /** Appends one sample taken during RECORDING. */
