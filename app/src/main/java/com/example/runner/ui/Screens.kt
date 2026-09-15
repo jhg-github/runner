@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.runner.ble.DeviceInfo
 import com.example.runner.gps.GpsState
@@ -239,14 +240,21 @@ fun SessionScreen(
     heartRate: Int?,
     recordingState: RecordingState,
     elapsedMs: Long,
+    trainerState: TrainerState? = null,
     onStartRecording: () -> Unit,
     onPauseRecording: () -> Unit,
     onResumeRecording: () -> Unit,
     onStopRecording: () -> Unit,
 ) {
+    val trainerBgColor = when (trainerState) {
+        TrainerState.RUN -> Color(0xFF4CAF50).copy(alpha = 0.15f)
+        TrainerState.WALK -> Color(0xFF2196F3).copy(alpha = 0.15f)
+        null -> Color.Transparent
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(trainerBgColor)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -258,6 +266,20 @@ fun SessionScreen(
         )
 
         Spacer(Modifier.height(24.dp))
+
+        if (trainerState != null) {
+            Text(
+                text = trainerState.name,
+                style = MaterialTheme.typography.headlineLarge,
+                color = when (trainerState) {
+                    TrainerState.RUN -> Color(0xFF2E7D32)
+                    TrainerState.WALK -> Color(0xFF1565C0)
+                },
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(24.dp))
+        }
 
         Text(
             text = formatElapsed(elapsedMs),

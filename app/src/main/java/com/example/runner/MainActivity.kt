@@ -38,6 +38,7 @@ import com.example.runner.ui.ConfigScreen
 import com.example.runner.ui.ConnectionState
 import com.example.runner.ui.RecordingState
 import com.example.runner.ui.SessionScreen
+import com.example.runner.ui.TrainerState
 import com.example.runner.ui.theme.RunnerTheme
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
@@ -97,6 +98,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Connecting) }
     var recordingState by remember { mutableStateOf(RecordingState.WAITING_TO_START) }
     var elapsedMs by remember { mutableStateOf(0L) }
+    var trainerState by remember { mutableStateOf<TrainerState?>(null) }
     var currentScreen by remember { mutableStateOf(AppScreen.CONFIG) }
 
     // Heart rate training zone (persisted via SharedPreferences).
@@ -175,6 +177,24 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
         }
     }
 
+    // Virtual trainer: RUN at start of recording, null when not recording.
+    LaunchedEffect(recordingState) {
+        trainerState =
+            if (recordingState == RecordingState.RECORDING) TrainerState.RUN else null
+    }
+
+    // Virtual trainer: hysteresis on heart rate updates.
+    LaunchedEffect(heartRate, recordingState) {
+        val current = trainerState ?: return@LaunchedEffect
+        val hr = heartRate ?: return@LaunchedEffect
+        if (recordingState != RecordingState.RECORDING) return@LaunchedEffect
+        val (zoneMin, zoneMax) = zoneStore.read()
+        trainerState = when (current) {
+            TrainerState.RUN -> if (hr >= zoneMax) TrainerState.WALK else TrainerState.RUN
+            TrainerState.WALK -> if (hr <= zoneMin) TrainerState.RUN else TrainerState.WALK
+        }
+    }
+
     // Run as a foreground service (location type) while RECORDING so Android keeps
     // delivering GPS fixes when the screen is off or the app is backgrounded.
     DisposableEffect(recordingState) {
@@ -250,6 +270,7 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
             heartRate = heartRate,
             recordingState = recordingState,
             elapsedMs = elapsedMs,
+            trainerState = trainerState,
             onStartRecording = {
                 recorder.startNewSession()
                 recorder.flushToBackup(context.cacheDir)

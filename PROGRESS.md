@@ -269,3 +269,36 @@ Android throttles GPS after initial burst. No re-registration, no staleness chec
 
 - 2026-09-15: Architect plan obtained. Implementation completed.
   `./gradlew :app:compileDebugKotlin` BUILD SUCCESSFUL. Manual test passed.
+
+---
+
+## Virtual Trainer Plan (architect, 2026-09-15)
+
+**Goal:** Session screen shows a virtual trainer (RUN/WALK) driven by the heart
+rate vs. the configured training zone (min/max bpm from SharedPreferences).
+
+### Design
+
+- `enum TrainerState { RUN, WALK }` in `ui/RecordingState.kt`.
+- State `trainerState: TrainerState?` in `RunnerApp`; `null` when not RECORDING.
+- Two `LaunchedEffect`s in `MainActivity.kt`:
+  1. On recording state change: RECORDING -> RUN, else null.
+  2. On heartRate update: hysteresis check with `zoneStore.read()` —
+     RUN: HR >= max -> WALK; WALK: HR <= min -> RUN.
+- `SessionScreen` gains `trainerState: TrainerState? = null`; root Column gets
+  `Modifier.background(...)` (green 15% alpha for RUN, blue 15% for WALK);
+  "RUN"/"WALK" `headlineLarge` text between HR value and elapsed time.
+
+### Tasks
+
+- [x] Write plan (`TRAINER_PLAN.md`)
+- [x] Add `TrainerState` enum to `ui/RecordingState.kt`
+- [x] Add trainer state + hysteresis logic in `MainActivity.kt`
+- [x] Update `SessionScreen` (background color + RUN/WALK text) in `ui/Screens.kt`
+- [x] Build passes (`./gradlew :app:assembleDebug` BUILD SUCCESSFUL)
+- [x] Manual smoke test on device
+
+## Progress Notes (Virtual Trainer)
+
+- 2026-09-15: Architect plan obtained. Implementation completed.
+  `./gradlew :app:assembleDebug` BUILD SUCCESSFUL. Manual test passed.

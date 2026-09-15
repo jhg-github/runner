@@ -1,3 +1,21 @@
+
+I want to add a new feature to the session screen. It is a virtual trainer that tells the user when to run and when to walk.
+In the training session the user wants to keep its heartrate in the heartrate zone configured in the configuration screen.
+- The user should start running.
+- Once the user reaches or go over the max heartbeat, the user should start walking, so the heartbeat decreases.
+- Once the user reaches or go bellow the min heartbeat, the user should start running, so the heartbeat increases.
+- The loop continues until session is stopped.
+- When the user is running it has to be visible in the GUI, maybe changing the background color to green-ish and a text saying "RUN".
+- When the user is walking it has to be visible in the GUI, maybe changing the background color to blue-ish a text saying "WALK".
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
 -----------------------------
 
 
