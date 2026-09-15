@@ -99,6 +99,15 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
     var elapsedMs by remember { mutableStateOf(0L) }
     var currentScreen by remember { mutableStateOf(AppScreen.CONFIG) }
 
+    // Heart rate training zone (persisted via SharedPreferences).
+    val zonePrefs = remember {
+        context.getSharedPreferences(TrainingZonePrefs.PREFS_NAME, Context.MODE_PRIVATE)
+    }
+    val zoneStore = remember { TrainingZonePrefs(zonePrefs) }
+    val initialZone = remember { zoneStore.read() }
+    var zoneMinText by remember { mutableStateOf(initialZone.first.toString()) }
+    var zoneMaxText by remember { mutableStateOf(initialZone.second.toString()) }
+
     fun scanDevices() {
         scanScope.launch {
             isScanning = true
@@ -225,6 +234,16 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
                 recorder.deleteBackup(context.cacheDir)
             },
             onNewSession = { currentScreen = AppScreen.SESSION },
+            zoneMinText = zoneMinText,
+            zoneMaxText = zoneMaxText,
+            onZoneMinChanged = { text ->
+                zoneMinText = text
+                text.toIntOrNull()?.let { zoneStore.write(min = it) }
+            },
+            onZoneMaxChanged = { text ->
+                zoneMaxText = text
+                text.toIntOrNull()?.let { zoneStore.write(max = it) }
+            },
         )
 
         AppScreen.SESSION -> SessionScreen(

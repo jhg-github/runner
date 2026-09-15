@@ -237,3 +237,35 @@ Android throttles GPS after initial burst. No re-registration, no staleness chec
   `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL.
   SessionScreen now shows only HR value + RecordingControls (Start/Pause/Resume/Stop).
   Manual smoke test on device passed (session shows only HR value + buttons; START/PAUSE/RESUME/STOP work; STOP returns to config; config screen unchanged).
+
+---
+
+## Heartbeat Training Zone Plan (architect, 2026-09-15)
+
+**Goal:** Add min/max heartbeat training zone fields to the Config screen, persisted across restarts.
+
+### Design
+
+- Persistence: `SharedPreferences` (file `runner_settings`, keys `zone_min_bpm` / `zone_max_bpm`,
+  defaults 100 / 180). Zero new dependencies.
+- `TrainingZonePrefs` (`app/src/main/java/com/example/runner/TrainingZonePrefs.kt`): thin wrapper
+  with `read()` / `write(min, max)`.
+- UI: `TrainingZoneCard` composable in `ui/Screens.kt` (title "Heart rate zone", two
+  `OutlinedTextField`s "Min bpm"/"Max bpm", `KeyboardType.Number`), placed between `GpsPanel`
+  and the "New Session" button. Column now scrolls (`verticalScroll`) instead of `Arrangement.Center`.
+- State: `zoneMinText` / `zoneMaxText` Strings in `RunnerApp`; typed text updates immediately,
+  valid ints persisted via `.apply()`. Invalid/empty input keeps last persisted value.
+
+### Tasks
+
+- [x] Write plan (`HEARTBEAT_ZONE_PLAN.md`)
+- [x] Create `TrainingZonePrefs.kt`
+- [x] Add `TrainingZoneCard` + params to `ui/Screens.kt`
+- [x] Wire state + persistence in `MainActivity.kt`
+- [x] Build and verify (`./gradlew :app:compileDebugKotlin` BUILD SUCCESSFUL)
+- [x] Manual smoke test on device
+
+## Progress Notes (Heartbeat Zone)
+
+- 2026-09-15: Architect plan obtained. Implementation completed.
+  `./gradlew :app:compileDebugKotlin` BUILD SUCCESSFUL. Manual test passed.

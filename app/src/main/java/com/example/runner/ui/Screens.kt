@@ -14,16 +14,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.example.runner.ble.DeviceInfo
 import com.example.runner.gps.GpsState
@@ -143,6 +148,10 @@ fun ConfigScreen(
     gpsState: GpsState,
     onDisconnect: () -> Unit,
     onNewSession: () -> Unit,
+    zoneMinText: String,
+    zoneMaxText: String,
+    onZoneMinChanged: (String) -> Unit,
+    onZoneMaxChanged: (String) -> Unit,
 ) {
     val selectedDevice = device
     if (selectedDevice == null) {
@@ -161,9 +170,9 @@ fun ConfigScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = selectedDevice.name,
@@ -204,6 +213,15 @@ fun ConfigScreen(
         Spacer(Modifier.height(24.dp))
 
         GpsPanel(gpsState = gpsState)
+
+        Spacer(Modifier.height(24.dp))
+
+        TrainingZoneCard(
+            zoneMinText = zoneMinText,
+            zoneMaxText = zoneMaxText,
+            onZoneMinChanged = onZoneMinChanged,
+            onZoneMaxChanged = onZoneMaxChanged,
+        )
 
         Spacer(Modifier.height(24.dp))
 
@@ -305,6 +323,46 @@ fun GpsPanel(gpsState: GpsState, modifier: Modifier = Modifier) {
                     text = "Accuracy: ${"%.1f".format(it)} m",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Lets the user set the heart rate training zone (min and max beats per minute).
+ */
+@Composable
+private fun TrainingZoneCard(
+    zoneMinText: String,
+    zoneMaxText: String,
+    onZoneMinChanged: (String) -> Unit,
+    onZoneMaxChanged: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(text = "Heart rate zone", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = zoneMinText,
+                    onValueChange = onZoneMinChanged,
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Min bpm") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                OutlinedTextField(
+                    value = zoneMaxText,
+                    onValueChange = onZoneMaxChanged,
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Max bpm") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
             }
         }

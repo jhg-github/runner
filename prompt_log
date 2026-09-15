@@ -1,6 +1,23 @@
 -----------------------------
 
 
+I want to add a new feature to the configuration screen. I want to add the heartbeat training zone. This is
+the min and max heartbeat the user wants to train in.
+- We need an input field for the min heartbeat.
+- We need an input field for the max heartbeat.
+- This two values should be persisted and loaded next time the app is open.
+
+Rules:
+- The coder agent is in charge of the implementation, and will always ask the architect agent for plan first.
+- The plan and progress should be available in a text file, so the work can be resumed if interrupted.
+- The final solution should be kept as simple as possible
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+
+-----------------------------
+
+
 I want to add a new feature to the session screen. I want to add the total elapsed session time.
 - The total elapsed session time is the time since session started.
 - The format will be HH:MM:SS.
