@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.example.runner.audio.TrainerSoundPlayer
 import com.example.runner.ble.DeviceInfo
 import com.example.runner.ble.HeartRateMonitor
 import com.example.runner.ble.toDeviceInfo
@@ -147,6 +148,11 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
         onDispose { gpsTracker.stop() }
     }
 
+    val soundPlayer = remember { TrainerSoundPlayer(context) }
+    DisposableEffect(Unit) {
+        onDispose { soundPlayer.release() }
+    }
+
     // Sample heart rate + GPS every second while RECORDING; backup to cache every 30 s.
     LaunchedEffect(recordingState) {
         if (recordingState == RecordingState.RECORDING) {
@@ -193,6 +199,13 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
             TrainerState.RUN -> if (hr >= zoneMax) TrainerState.WALK else TrainerState.RUN
             TrainerState.WALK -> if (hr <= zoneMin) TrainerState.RUN else TrainerState.WALK
         }
+    }
+
+    // Sound feedback on run/walk transitions.
+    LaunchedEffect(trainerState) {
+        val state = trainerState ?: return@LaunchedEffect
+        if (recordingState != RecordingState.RECORDING) return@LaunchedEffect
+        soundPlayer.playCue(isRun = state == TrainerState.RUN)
     }
 
     // Run as a foreground service (location type) while RECORDING so Android keeps

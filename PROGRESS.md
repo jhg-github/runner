@@ -64,7 +64,7 @@ Plan and progress file (can be resumed if interrupted).
 - [x] Add `GpsPanel` to `ui/Screens.kt`; add `gpsState` param to `HeartRateScreen`
 - [x] Wire GPS in `MainActivity.kt` (permission, tracker, state)
 - [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest` BUILD SUCCESSFUL
-- [ ] Manual smoke test on device (GPS signal + coordinates on-screen)
+- [x] Manual smoke test on device (GPS signal + coordinates on-screen)
 
 ## Progress Notes (GPS)
 
@@ -92,7 +92,7 @@ Plan and progress file (can be resumed if interrupted).
 - [x] Update `HeartRateScreen` to accept + render recording state/controls
 - [x] Wire `recordingState` in `MainActivity.kt` (state + callbacks)
 - [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest`
-- [ ] Manual smoke test on device
+- [x] Manual smoke test on device
 
 ## Progress Notes (Recording)
 
@@ -125,7 +125,7 @@ Plan and progress file (can be resumed if interrupted).
 - [x] Add elevation to `gps/GpsLocation.kt`
 - [x] Wire recorder + sampling/backup loop in `MainActivity.kt`
 - [x] Build passes: `./gradlew :app:assembleDebug :app:testDebugUnitTest`
-- [ ] Manual smoke test on device (start, record, pause, resume, stop → file in Downloads)
+- [x] Manual smoke test on device (start, record, pause, resume, stop → file in Downloads)
 
 ## Progress Notes (Session Recording)
 
