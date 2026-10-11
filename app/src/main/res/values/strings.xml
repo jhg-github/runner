@@ -3,4 +3,7 @@
     <string name="recording_channel_name">Recording</string>
     <string name="recording_notification_title">Recording run</string>
     <string name="recording_notification_text">GPS tracking active</string>
+    <string name="run_label">RUN</string>
+    <string name="walk_label">WALK</string>
+    <string name="status_notification_text">%1$s bpm · %2$s</string>
 </resources>

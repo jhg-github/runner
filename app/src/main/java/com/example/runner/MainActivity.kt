@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Build
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,6 +55,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Create the notification channel before anything posts to it, so it is
+        // visible in App settings and the lock-screen status can be enabled.
+        RecordingService.createChannel(this)
         setContent {
             RunnerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -85,6 +89,22 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         permissionsGranted = result.values.all { it }
+    }
+
+    // Android 13+ requires POST_NOTIFICATIONS for the status notification to
+    // appear in the notification drawer and on the lock screen. Optional for
+    // the rest of the app, so denial does not block anything.
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* granted or denied: nothing to do, keep working */ }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     // Scan state.
@@ -161,6 +181,19 @@ private fun RunnerApp(modifier: Modifier = Modifier) {
                 delay(1000)
                 elapsed++
                 elapsedMs = recorder.elapsedMillis()
+                // Keep the foreground-service notification (visible on the lock
+                // screen) in sync with the live status. The service is already
+                // running as a foreground service, so startService with extras
+                // is allowed even if the screen is locked.
+                context.startService(
+                    Intent(context, RecordingService::class.java)
+                        .putExtra(RecordingService.EXTRA_HEART_RATE, heartRate ?: 0)
+                        .putExtra(RecordingService.EXTRA_ELAPSED_MS, elapsedMs)
+                        .putExtra(
+                            RecordingService.EXTRA_TRAINER,
+                            (trainerState ?: TrainerState.RUN).name,
+                        )
+                )
                 val fresh = gpsState.fixElapsedMs > 0 &&
                     SystemClock.elapsedRealtime() - gpsState.fixElapsedMs < STALE_FIX_MS
                 val lat = gpsState.latitude
